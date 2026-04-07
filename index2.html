@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoSort AI — Smart Waste Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{
+  --green:#00C853;--green-dark:#00A040;--green-glow:rgba(0,200,83,0.25);
+  --bg:#0A0F0A;--bg2:#0E1410;--bg3:#131A14;
+  --card:#111810;--card2:#16201A;
+  --border:rgba(0,200,83,0.12);--border2:rgba(0,200,83,0.22);
+  --text:#F2F7F2;--text2:#8BA98C;--text3:#4A6B4C;
+  --font-display:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;
+  --r:16px;--r2:24px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scrollbar-width:thin;scrollbar-color:var(--green-dark) var(--bg2)}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);overflow-x:hidden;line-height:1.6}
+::selection{background:var(--green);color:#000}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:0 40px;height:64px;display:flex;align-items:center;justify-content:space-between;background:rgba(10,15,10,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo-icon{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.nav-logo span{font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text)}
+.nav-links{display:flex;align-items:center;gap:32px}
+.nav-links a{color:var(--text2);text-decoration:none;font-size:14px;font-weight:400;transition:color 0.2s;letter-spacing:0.01em}
+.nav-links a:hover{color:var(--green)}
+.nav-right{display:flex;align-items:center;gap:16px}
+.lang-switcher{display:flex;gap:4px;background:var(--bg3);border-radius:8px;padding:3px}
+.lang-btn{border:none;background:transparent;color:var(--text2);font-size:12px;font-family:var(--font-body);padding:4px 10px;border-radius:6px;cursor:pointer;transition:all 0.2s;font-weight:500}
+.lang-btn.active{background:var(--green);color:#000;font-weight:700}
+.btn-primary{background:var(--green);color:#000;border:none;padding:10px 22px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:all 0.2s;letter-spacing:0.01em}
+.btn-primary:hover{background:var(--green-dark);transform:translateY(-1px)}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:80px 40px 40px}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 60%,rgba(0,200,83,0.07) 0%,transparent 70%)}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,200,83,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,83,0.04) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black,transparent)}
+.hero-orb{position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(0,200,83,0.08),transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);animation:pulse-orb 4s ease-in-out infinite}
+@keyframes pulse-orb{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.5}50%{transform:translate(-50%,-50%) scale(1.1);opacity:1}}
+.hero-content{position:relative;z-index:2;text-align:center;max-width:900px;animation:fadeUp 0.8s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(0,200,83,0.1);border:1px solid var(--border2);border-radius:100px;padding:6px 16px;margin-bottom:32px;font-size:13px;color:var(--green);font-weight:500;letter-spacing:0.05em}
+.hero-badge-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:blink 1.5s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.hero h1{font-family:var(--font-display);font-size:clamp(42px,7vw,88px);font-weight:800;line-height:1.0;letter-spacing:-0.03em;margin-bottom:24px;color:var(--text)}
+.hero h1 .accent{color:var(--green);display:inline}
+.hero-sub{font-size:clamp(16px,2vw,20px);color:var(--text2);max-width:600px;margin:0 auto 40px;font-weight:300;line-height:1.7}
+.hero-cta{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:64px}
+.btn-hero-primary{background:var(--green);color:#000;border:none;padding:16px 36px;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:all 0.25s;letter-spacing:0.01em;position:relative;overflow:hidden}
+.btn-hero-primary::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,0.15);transform:translateX(-100%);transition:transform 0.3s}
+.btn-hero-primary:hover::before{transform:translateX(0)}
+.btn-hero-primary:hover{transform:translateY(-2px);box-shadow:0 12px 40px var(--green-glow)}
+.btn-hero-secondary{background:transparent;color:var(--text);border:1px solid var(--border2);padding:16px 36px;border-radius:12px;font-size:16px;font-weight:500;cursor:pointer;font-family:var(--font-body);transition:all 0.25s}
+.btn-hero-secondary:hover{border-color:var(--green);color:var(--green);transform:translateY(-2px)}
+.hero-stats{display:flex;gap:48px;justify-content:center;flex-wrap:wrap}
+.hero-stat{text-align:center}
+.hero-stat-num{font-family:var(--font-display);font-size:32px;font-weight:700;color:var(--green)}
+.hero-stat-label{font-size:13px;color:var(--text3);margin-top:2px}
+.hero-visual{position:absolute;right:-100px;top:50%;transform:translateY(-50%);width:500px;opacity:0.06;pointer-events:none}
+
+/* FLOATING PARTICLES */
+.particles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.particle{position:absolute;width:4px;height:4px;border-radius:50%;background:var(--green);animation:float-particle linear infinite}
+@keyframes float-particle{0%{transform:translateY(100vh) scale(0);opacity:0}10%{opacity:1}90%{opacity:0.5}100%{transform:translateY(-100px) scale(1);opacity:0}}
+
+/* SECTIONS */
+section{padding:100px 40px}
+.section-label{font-size:12px;font-weight:600;letter-spacing:0.15em;color:var(--green);text-transform:uppercase;margin-bottom:16px}
+.section-title{font-family:var(--font-display);font-size:clamp(32px,5vw,52px);font-weight:700;color:var(--text);letter-spacing:-0.02em;line-height:1.1;margin-bottom:16px}
+.section-sub{font-size:17px;color:var(--text2);max-width:560px;line-height:1.7;font-weight:300}
+.container{max-width:1200px;margin:0 auto}
+
+/* HOW IT WORKS */
+.steps-section{background:var(--bg2)}
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:60px}
+.step-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:36px 32px;position:relative;overflow:hidden;transition:all 0.3s;cursor:default}
+.step-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,200,83,0.05),transparent);opacity:0;transition:opacity 0.3s}
+.step-card:hover{border-color:var(--border2);transform:translateY(-4px);box-shadow:0 24px 60px rgba(0,0,0,0.4)}
+.step-card:hover::before{opacity:1}
+.step-num{font-family:var(--font-display);font-size:80px;font-weight:800;color:rgba(0,200,83,0.06);position:absolute;top:-10px;right:16px;line-height:1;pointer-events:none}
+.step-icon{width:56px;height:56px;border-radius:14px;background:rgba(0,200,83,0.1);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:24px;position:relative;z-index:1}
+.step-card h3{font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--text);margin-bottom:12px;position:relative;z-index:1}
+.step-card p{font-size:15px;color:var(--text2);line-height:1.7;position:relative;z-index:1;font-weight:300}
+.step-connector{display:none}
+
+/* AI SCANNER */
+.scanner-section{background:var(--bg)}
+.scanner-layout{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:60px;align-items:start}
+.scanner-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:32px;min-height:400px;display:flex;flex-direction:column}
+.scanner-upload{flex:1;border:2px dashed var(--border2);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;cursor:pointer;transition:all 0.3s;padding:40px;background:rgba(0,200,83,0.02)}
+.scanner-upload:hover{border-color:var(--green);background:rgba(0,200,83,0.05)}
+.scanner-upload input{display:none}
+.upload-icon{width:72px;height:72px;border-radius:50%;background:rgba(0,200,83,0.1);display:flex;align-items:center;justify-content:center;font-size:32px;border:1px solid var(--border2)}
+.upload-text{font-size:16px;color:var(--text2);text-align:center}
+.upload-text strong{color:var(--green);display:block;margin-bottom:4px}
+.upload-sub{font-size:12px;color:var(--text3)}
+.scanner-preview{display:none;flex-direction:column;gap:16px}
+.scanner-preview.show{display:flex}
+.preview-img{width:100%;height:220px;object-fit:cover;border-radius:12px;border:1px solid var(--border)}
+.scan-progress{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:8px}
+.scan-bar{height:100%;background:var(--green);border-radius:2px;width:0%;transition:width 0.05s linear}
+.result-box{background:var(--card2);border-radius:var(--r);padding:24px;border:1px solid var(--border)}
+.result-box.show{border-color:var(--border2)}
+.result-type{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.result-icon{font-size:36px}
+.result-name{font-family:var(--font-display);font-size:24px;font-weight:700;color:var(--green)}
+.result-conf{font-size:13px;color:var(--text2)}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.result-chip{background:var(--bg3);border-radius:10px;padding:12px;border:1px solid var(--border)}
+.result-chip-label{font-size:11px;color:var(--text3);margin-bottom:4px}
+.result-chip-val{font-size:14px;color:var(--text);font-weight:500}
+.points-animation{display:flex;align-items:center;gap:8px;margin-top:16px;padding:12px 16px;background:rgba(0,200,83,0.1);border-radius:10px;border:1px solid var(--border2)}
+.points-num{font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--green)}
+.demo-label{font-size:13px;color:var(--text3);text-align:center;margin-top:12px}
+
+/* MAP SECTION */
+.map-section{background:var(--bg2);padding:100px 40px}
+.map-layout{display:grid;grid-template-columns:280px 1fr;gap:24px;margin-top:60px;align-items:start}
+.map-sidebar{display:flex;flex-direction:column;gap:16px}
+.map-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+.map-card h4{font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--text);margin-bottom:12px}
+.city-select{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--font-body);font-size:14px;cursor:pointer;outline:none;appearance:none;transition:border-color 0.2s}
+.city-select:focus{border-color:var(--green)}
+.map-toggle{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--bg3);border-radius:10px;padding:4px}
+.map-toggle-btn{padding:8px;border:none;background:transparent;color:var(--text2);font-size:13px;font-family:var(--font-body);border-radius:8px;cursor:pointer;transition:all 0.2s;font-weight:500}
+.map-toggle-btn.active{background:var(--green);color:#000;font-weight:700}
+.district-list{display:flex;flex-direction:column;gap:6px}
+.district-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid transparent;cursor:pointer;transition:all 0.2s}
+.district-item:hover,.district-item.active{border-color:var(--border2);background:rgba(0,200,83,0.08)}
+.district-dot{width:8px;height:8px;border-radius:50%}
+.district-name{font-size:13px;color:var(--text);flex:1;margin-left:8px}
+.district-pct{font-size:12px;color:var(--text2)}
+#leaflet-map{height:500px;border-radius:var(--r2);border:1px solid var(--border);overflow:hidden}
+.leaflet-container{background:#0d1612!important}
+
+/* ANALYTICS */
+.analytics-section{background:var(--bg)}
+.analytics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:60px}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;transition:border-color 0.2s}
+.kpi-card:hover{border-color:var(--border2)}
+.kpi-label{font-size:12px;color:var(--text3);margin-bottom:8px;letter-spacing:0.05em;text-transform:uppercase}
+.kpi-num{font-family:var(--font-display);font-size:36px;font-weight:700;color:var(--text);line-height:1}
+.kpi-green{color:var(--green)}
+.kpi-change{font-size:12px;color:var(--green);margin-top:6px}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px}
+.chart-card h4{font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--text);margin-bottom:24px}
+.bar-chart{display:flex;flex-direction:column;gap:14px}
+.bar-row{display:flex;align-items:center;gap:12px}
+.bar-label{font-size:12px;color:var(--text2);width:64px;text-align:right;flex-shrink:0}
+.bar-track{flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width 1s cubic-bezier(0.16,1,0.3,1)}
+.bar-val{font-size:12px;color:var(--text2);width:36px;flex-shrink:0}
+.donut-wrap{display:flex;align-items:center;gap:24px}
+.donut-legend{display:flex;flex-direction:column;gap:10px;flex:1}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2)}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.timeline{display:flex;flex-direction:column;gap:8px}
+.timeline-row{display:flex;gap:2px;align-items:flex-end;height:80px}
+.timeline-bar{flex:1;border-radius:3px 3px 0 0;background:rgba(0,200,83,0.3);transition:all 0.3s;cursor:pointer;min-height:4px}
+.timeline-bar:hover{background:var(--green)}
+.timeline-labels{display:flex;gap:2px;margin-top:4px}
+.timeline-label{flex:1;font-size:9px;color:var(--text3);text-align:center}
+
+/* GAMIFICATION */
+.game-section{background:var(--bg2)}
+.game-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:60px}
+.game-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:32px}
+.levels-list{display:flex;flex-direction:column;gap:12px;margin-top:24px}
+.level-item{display:flex;align-items:center;gap:16px;padding:16px;background:var(--bg3);border-radius:12px;border:1px solid transparent;transition:all 0.2s}
+.level-item.current{border-color:var(--green);background:rgba(0,200,83,0.08)}
+.level-badge{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.level-info{flex:1}
+.level-name{font-weight:600;color:var(--text);font-size:15px}
+.level-pts{font-size:12px;color:var(--text2);margin-top:2px}
+.level-xp{height:4px;background:var(--border);border-radius:2px;margin-top:8px;overflow:hidden}
+.level-xp-fill{height:100%;background:var(--green);border-radius:2px}
+.leaderboard{display:flex;flex-direction:column;gap:8px;margin-top:24px}
+.lb-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg3);border-radius:10px;border:1px solid transparent;transition:border-color 0.2s}
+.lb-row:hover{border-color:var(--border)}
+.lb-rank{font-family:var(--font-display);font-size:18px;font-weight:700;width:28px;color:var(--text3)}
+.lb-rank.gold{color:#FFD700}
+.lb-rank.silver{color:#C0C0C0}
+.lb-rank.bronze{color:#CD7F32}
+.lb-avatar{width:36px;height:36px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:16px;border:1px solid var(--border)}
+.lb-name{flex:1;font-size:14px;color:var(--text);font-weight:500}
+.lb-pts{font-size:14px;color:var(--green);font-weight:600}
+
+/* ABOUT */
+.about-section{background:var(--bg);text-align:center}
+.about-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:60px;text-align:left}
+.about-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:28px;transition:all 0.3s}
+.about-card:hover{border-color:var(--border2);transform:translateY(-4px)}
+.about-icon{font-size:28px;margin-bottom:16px;display:block}
+.about-card h3{font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--text);margin-bottom:10px}
+.about-card p{font-size:14px;color:var(--text2);line-height:1.7;font-weight:300}
+.about-cta{margin-top:60px;padding:48px;background:linear-gradient(135deg,rgba(0,200,83,0.12),rgba(0,200,83,0.04));border:1px solid var(--border2);border-radius:var(--r2)}
+.about-cta h3{font-family:var(--font-display);font-size:36px;font-weight:700;color:var(--text);margin-bottom:12px}
+.about-cta p{font-size:17px;color:var(--text2);margin-bottom:28px;font-weight:300}
+
+/* FOOTER */
+footer{background:var(--bg2);border-top:1px solid var(--border);padding:40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:gap}
+.footer-left{display:flex;align-items:center;gap:10px}
+.footer-text{font-size:13px;color:var(--text3)}
+.footer-links{display:flex;gap:24px}
+.footer-links a{font-size:13px;color:var(--text3);text-decoration:none;transition:color 0.2s}
+.footer-links a:hover{color:var(--green)}
+
+/* ANIMATIONS */
+.fade-in{opacity:0;transform:translateY(20px);transition:opacity 0.6s ease,transform 0.6s ease}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  nav{padding:0 20px}
+  .nav-links{display:none}
+  section{padding:60px 20px}
+  .steps-grid,.game-grid,.charts-grid,.about-grid{grid-template-columns:1fr}
+  .scanner-layout,.map-layout{grid-template-columns:1fr}
+  .analytics-grid{grid-template-columns:1fr 1fr}
+  .hero{padding:80px 20px 40px}
+  .hero-stats{gap:24px}
+  footer{flex-direction:column;gap:16px;text-align:center}
+}
+
+/* SCAN ANIMATION */
+.scan-line{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);animation:scan 2s linear infinite;top:0}
+@keyframes scan{0%{top:0;opacity:1}100%{top:100%;opacity:0.3}}
+.scanner-active{position:relative;overflow:hidden}
+
+/* TYPING CURSOR */
+.cursor{display:inline-block;width:2px;height:1em;background:var(--green);animation:blink 0.8s step-end infinite;vertical-align:text-bottom;margin-left:2px}
+
+/* GREEN GLOW BUTTON */
+.glow-btn{box-shadow:0 0 20px var(--green-glow)}
+.glow-btn:hover{box-shadow:0 0 40px rgba(0,200,83,0.4)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-icon">♻</div>
+    <span>EcoSort AI</span>
+  </a>
+  <div class="nav-links">
+    <a href="#how" data-i18n="nav_how">How it works</a>
+    <a href="#scanner" data-i18n="nav_scanner">AI Scanner</a>
+    <a href="#map" data-i18n="nav_map">Map</a>
+    <a href="#analytics" data-i18n="nav_analytics">Analytics</a>
+    <a href="#game" data-i18n="nav_game">Leaderboard</a>
+    <a href="#about" data-i18n="nav_about">About</a>
+  </div>
+  <div class="nav-right">
+    <div class="lang-switcher">
+      <button class="lang-btn active" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" onclick="setLang('ru')">RU</button>
+      <button class="lang-btn" onclick="setLang('kz')">KZ</button>
+    </div>
+    <button class="btn-primary" onclick="document.getElementById('scanner').scrollIntoView({behavior:'smooth'})" data-i18n="nav_try">Try Now</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-orb"></div>
+  <div class="particles" id="particles"></div>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <div class="hero-badge-dot"></div>
+      <span data-i18n="hero_badge">Live in Almaty • Beta</span>
+    </div>
+    <h1><span data-i18n="hero_title1">Smart Waste</span><br><span class="accent" data-i18n="hero_title2">Powered by AI</span></h1>
+    <p class="hero-sub" data-i18n="hero_sub">Sort your waste in seconds. Upload a photo — our system identifies the type, tells you where to dispose it, and rewards you with eco-points.</p>
+    <div class="hero-cta">
+      <button class="btn-hero-primary glow-btn" onclick="document.getElementById('scanner').scrollIntoView({behavior:'smooth'})" data-i18n="hero_cta1">Try AI Scanner →</button>
+      <button class="btn-hero-secondary" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})" data-i18n="hero_cta2">Learn more</button>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="hero-stat-num" id="counter-scans">0</div><div class="hero-stat-label" data-i18n="stat1">items scanned</div></div>
+      <div class="hero-stat"><div class="hero-stat-num" id="counter-users">0</div><div class="hero-stat-label" data-i18n="stat2">eco users</div></div>
+      <div class="hero-stat"><div class="hero-stat-num" id="counter-co2">0</div><div class="hero-stat-label" data-i18n="stat3">kg CO₂ saved</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="steps-section" id="how">
+  <div class="container">
+    <div class="fade-in">
+      <div class="section-label" data-i18n="how_label">Process</div>
+      <div class="section-title" data-i18n="how_title">How EcoSort works</div>
+      <p class="section-sub" data-i18n="how_sub">Three simple steps between you and a cleaner city.</p>
+    </div>
+    <div class="steps-grid fade-in">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div class="step-icon">📸</div>
+        <h3 data-i18n="step1_title">Upload Photo</h3>
+        <p data-i18n="step1_text">Take a photo of any waste item from your camera or gallery. The image is processed locally — no data leaves your device.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div class="step-icon">🧠</div>
+        <h3 data-i18n="step2_title">AI Analyzes</h3>
+        <p data-i18n="step2_text">Our classification model identifies the waste type — plastic, glass, paper, organic, metal, or e-waste — with confidence scoring.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div class="step-icon">✅</div>
+        <h3 data-i18n="step3_title">Get Result + Points</h3>
+        <p data-i18n="step3_text">See the nearest bin, recycling instructions, and earn eco-points that rank you on the city leaderboard.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI SCANNER -->
+<section class="scanner-section" id="scanner">
+  <div class="container">
+    <div class="fade-in">
+      <div class="section-label" data-i18n="scan_label">AI Demo</div>
+      <div class="section-title" data-i18n="scan_title">Try the Scanner</div>
+      <p class="section-sub" data-i18n="scan_sub">Upload any waste photo and see the classification in action. This demo uses pattern-based rules — the production model runs a trained classifier.</p>
+    </div>
+    <div class="scanner-layout fade-in">
+      <div class="scanner-box">
+        <div class="scanner-upload" id="upload-area" onclick="document.getElementById('file-input').click()">
+          <input type="file" id="file-input" accept="image/*" onchange="handleUpload(event)">
+          <div class="upload-icon">📁</div>
+          <div class="upload-text">
+            <strong data-i18n="upload_main">Click to upload or drag & drop</strong>
+            <span data-i18n="upload_sub">JPG, PNG, WebP up to 10MB</span>
+          </div>
+          <p class="upload-sub" data-i18n="upload_note">No data is stored or sent to any server in this demo</p>
+        </div>
+        <div class="scanner-preview" id="preview-area">
+          <div class="scanner-active">
+            <img id="preview-img" class="preview-img" src="" alt="preview">
+            <div class="scan-line" id="scan-line" style="display:none"></div>
+          </div>
+          <div class="scan-progress"><div class="scan-bar" id="scan-bar"></div></div>
+          <div style="font-size:12px;color:var(--text3);text-align:center" id="scan-status">Analyzing...</div>
+          <button onclick="resetScanner()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:8px 16px;border-radius:8px;cursor:pointer;font-family:var(--font-body);font-size:13px;margin-top:4px" data-i18n="scan_reset">← Try another</button>
+        </div>
+      </div>
+      <div class="result-box" id="result-box">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;color:var(--text3);text-align:center;padding:40px">
+          <div style="font-size:48px;opacity:0.3">🗂️</div>
+          <p data-i18n="result_empty">Upload a photo to see the AI classification result here.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MAP -->
+<section class="map-section" id="map">
+  <div class="container">
+    <div class="fade-in">
+      <div class="section-label" data-i18n="map_label">City Map</div>
+      <div class="section-title" data-i18n="map_title">Waste Bins Near You</div>
+      <p class="section-sub" data-i18n="map_sub">Locate collection points by district. Hover over a zone to see its fill status.</p>
+    </div>
+    <div class="map-layout fade-in">
+      <div class="map-sidebar">
+        <div class="map-card">
+          <h4 data-i18n="map_city">City</h4>
+          <select class="city-select" id="city-select" onchange="changeCity(this.value)">
+            <option value="almaty">Almaty 🇰🇿</option>
+            <option value="astana">Astana 🇰🇿</option>
+            <option value="shymkent">Shymkent 🇰🇿</option>
+          </select>
+        </div>
+        <div class="map-card">
+          <div class="map-toggle">
+            <button class="map-toggle-btn active" id="view-map-btn" onclick="setMapView('map')" data-i18n="view_map">Map</button>
+            <button class="map-toggle-btn" id="view-stats-btn" onclick="setMapView('stats')" data-i18n="view_stats">Stats</button>
+          </div>
+        </div>
+        <div class="map-card">
+          <h4 data-i18n="districts">Districts</h4>
+          <div class="district-list" id="district-list"></div>
+        </div>
+        <div class="map-card" style="font-size:12px;color:var(--text3);line-height:1.6" data-i18n="map_note">
+          Map data: OpenStreetMap. Bin locations are simulated for demo purposes.
+        </div>
+      </div>
+      <div id="leaflet-map"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ANALYTICS -->
+<section class="analytics-section" id="analytics">
+  <div class="container">
+    <div class="fade-in">
+      <div class="section-label" data-i18n="analytics_label">Analytics</div>
+      <div class="section-title" data-i18n="analytics_title">City-wide Impact</div>
+      <p class="section-sub" data-i18n="analytics_sub">Aggregated recycling data across all registered users and collection points.</p>
+    </div>
+    <div class="analytics-grid fade-in">
+      <div class="kpi-card"><div class="kpi-label" data-i18n="kpi1">Total sorted</div><div class="kpi-num kpi-green">24,180</div><div class="kpi-change">↑ 12% this week</div></div>
+      <div class="kpi-card"><div class="kpi-label" data-i18n="kpi2">Active users</div><div class="kpi-num">3,842</div><div class="kpi-change kpi-change" style="color:var(--text2)">+218 today</div></div>
+      <div class="kpi-card"><div class="kpi-label" data-i18n="kpi3">CO₂ saved</div><div class="kpi-num kpi-green">1.2t</div><div class="kpi-change">This month</div></div>
+      <div class="kpi-card"><div class="kpi-label" data-i18n="kpi4">Accuracy</div><div class="kpi-num">94.7%</div><div class="kpi-change" style="color:var(--text2)">Model v2.1</div></div>
+    </div>
+    <div class="charts-grid fade-in">
+      <div class="chart-card">
+        <h4 data-i18n="chart1_title">Waste by type</h4>
+        <div class="bar-chart" id="bar-chart"></div>
+      </div>
+      <div class="chart-card">
+        <h4 data-i18n="chart2_title">Sort activity (last 30 days)</h4>
+        <div class="timeline-row" id="timeline-bars"></div>
+        <div class="timeline-labels" id="timeline-labels"></div>
+      </div>
+      <div class="chart-card">
+        <h4 data-i18n="chart3_title">Distribution by type</h4>
+        <div class="donut-wrap">
+          <svg width="120" height="120" viewBox="0 0 120 120" id="donut-svg"></svg>
+          <div class="donut-legend" id="donut-legend"></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h4 data-i18n="chart4_title">Top performing districts</h4>
+        <div class="bar-chart" id="district-chart"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GAMIFICATION -->
+<section class="game-section" id="game">
+  <div class="container">
+    <div class="fade-in">
+      <div class="section-label" data-i18n="game_label">Gamification</div>
+      <div class="section-title" data-i18n="game_title">Compete. Save. Win.</div>
+      <p class="section-sub" data-i18n="game_sub">Earn eco-points for every scan, climb levels, and lead your city's recycling leaderboard.</p>
+    </div>
+    <div class="game-grid fade-in">
+      <div class="game-card">
+        <h4 style="font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--text);margin-bottom:4px" data-i18n="levels_title">Your Progress</h4>
+        <p style="font-size:13px;color:var(--text2)" data-i18n="levels_sub">Sort more to unlock new levels</p>
+        <div class="levels-list" id="levels-list"></div>
+      </div>
+      <div class="game-card">
+        <h4 style="font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--text);margin-bottom:4px" data-i18n="lb_title">Leaderboard</h4>
+        <p style="font-size:13px;color:var(--text2)" data-i18n="lb_sub">Top eco-heroes this month</p>
+        <div class="leaderboard" id="leaderboard"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="about-section" id="about">
+  <div class="container">
+    <div class="fade-in">
+      <div class="section-label" data-i18n="about_label">Mission</div>
+      <div class="section-title" data-i18n="about_title">Why EcoSort exists</div>
+      <p class="section-sub" style="margin:0 auto" data-i18n="about_sub">Most waste in Central Asian cities ends up in the wrong bin — not from laziness, but from lack of clear information. We fix that.</p>
+    </div>
+    <div class="about-grid fade-in">
+      <div class="about-card"><span class="about-icon">🏙️</span><h3 data-i18n="about1_title">Built for Almaty</h3><p data-i18n="about1_text">Designed with local recycling infrastructure in mind. We map real collection points and partner with city waste services.</p></div>
+      <div class="about-card"><span class="about-icon">🔬</span><h3 data-i18n="about2_title">Transparent AI</h3><p data-i18n="about2_text">No black boxes. The classifier shows confidence scores and explains its reasoning. You always know why a decision was made.</p></div>
+      <div class="about-card"><span class="about-icon">🌱</span><h3 data-i18n="about3_title">Real impact</h3><p data-i18n="about3_text">Each correctly sorted item reduces landfill load and CO₂ emissions. We report community impact monthly with verifiable data.</p></div>
+    </div>
+    <div class="about-cta fade-in">
+      <h3 data-i18n="cta_title">Ready to make a difference?</h3>
+      <p data-i18n="cta_sub">Join 3,800+ users already sorting smarter in Almaty.</p>
+      <button class="btn-hero-primary glow-btn" onclick="document.getElementById('scanner').scrollIntoView({behavior:'smooth'})" data-i18n="cta_btn">Start Sorting Now →</button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">
+    <div class="nav-logo-icon" style="width:28px;height:28px;font-size:14px">♻</div>
+    <span class="footer-text">© 2025 EcoSort AI · Almaty Hackathon Project</span>
+  </div>
+  <div class="footer-links">
+    <a href="#">Privacy</a>
+    <a href="#">GitHub</a>
+    <a href="#">API Docs</a>
+    <a href="#">Contact</a>
+  </div>
+</footer>
+
+<script>
+// ===== I18N =====
+const i18n={
+  en:{
+    nav_how:"How it works",nav_scanner:"AI Scanner",nav_map:"Map",nav_analytics:"Analytics",nav_game:"Leaderboard",nav_about:"About",nav_try:"Try Now",
+    hero_badge:"Live in Almaty · Beta",hero_title1:"Smart Waste",hero_title2:"Powered by AI",
+    hero_sub:"Sort your waste in seconds. Upload a photo — our system identifies the type, tells you where to dispose it, and rewards you with eco-points.",
+    hero_cta1:"Try AI Scanner →",hero_cta2:"Learn more",
+    stat1:"items scanned",stat2:"eco users",stat3:"kg CO₂ saved",
+    how_label:"Process",how_title:"How EcoSort works",how_sub:"Three simple steps between you and a cleaner city.",
+    step1_title:"Upload Photo",step1_text:"Take a photo of any waste item from your camera or gallery. The image is processed locally — no data leaves your device.",
+    step2_title:"AI Analyzes",step2_text:"Our classification model identifies the waste type — plastic, glass, paper, organic, metal, or e-waste — with confidence scoring.",
+    step3_title:"Get Result + Points",step3_text:"See the nearest bin, recycling instructions, and earn eco-points that rank you on the city leaderboard.",
+    scan_label:"AI Demo",scan_title:"Try the Scanner",scan_sub:"Upload any waste photo and see the classification in action. This demo uses pattern-based rules — production runs a trained classifier.",
+    upload_main:"Click to upload or drag & drop",upload_sub:"JPG, PNG, WebP up to 10MB",upload_note:"No data is stored or sent to any server in this demo",scan_reset:"← Try another",
+    result_empty:"Upload a photo to see the AI classification result here.",
+    map_label:"City Map",map_title:"Waste Bins Near You",map_sub:"Locate collection points by district. Hover over a zone to see its fill status.",
+    map_city:"City",view_map:"Map",view_stats:"Stats",districts:"Districts",map_note:"Map data: OpenStreetMap. Bin locations are simulated for demo purposes.",
+    analytics_label:"Analytics",analytics_title:"City-wide Impact",analytics_sub:"Aggregated recycling data across all registered users and collection points.",
+    kpi1:"Total sorted",kpi2:"Active users",kpi3:"CO₂ saved",kpi4:"Accuracy",
+    chart1_title:"Waste by type",chart2_title:"Sort activity (last 30 days)",chart3_title:"Distribution",chart4_title:"Top districts",
+    game_label:"Gamification",game_title:"Compete. Save. Win.",game_sub:"Earn eco-points for every scan, climb levels, and lead your city's recycling leaderboard.",
+    levels_title:"Your Progress",levels_sub:"Sort more to unlock new levels",lb_title:"Leaderboard",lb_sub:"Top eco-heroes this month",
+    about_label:"Mission",about_title:"Why EcoSort exists",about_sub:"Most waste in Central Asian cities ends up in the wrong bin — not from laziness, but from lack of clear information.",
+    about1_title:"Built for Almaty",about1_text:"Designed with local recycling infrastructure. We map real collection points and partner with city waste services.",
+    about2_title:"Transparent AI",about2_text:"No black boxes. The classifier shows confidence scores and explains its reasoning. You always know why.",
+    about3_title:"Real impact",about3_text:"Each correctly sorted item reduces landfill load and CO₂ emissions. We report community impact monthly.",
+    cta_title:"Ready to make a difference?",cta_sub:"Join 3,800+ users already sorting smarter in Almaty.",cta_btn:"Start Sorting Now →"
+  },
+  ru:{
+    nav_how:"Как работает",nav_scanner:"AI Сканер",nav_map:"Карта",nav_analytics:"Аналитика",nav_game:"Лидеры",nav_about:"О проекте",nav_try:"Попробовать",
+    hero_badge:"Работает в Алматы · Бета",hero_title1:"Умные отходы",hero_title2:"На базе AI",
+    hero_sub:"Сортируйте мусор за секунды. Загрузите фото — система определит тип, покажет куда выбросить и начислит эко-баллы.",
+    hero_cta1:"Открыть AI Сканер →",hero_cta2:"Узнать больше",
+    stat1:"отсканировано",stat2:"эко-пользователей",stat3:"кг CO₂ сохранено",
+    how_label:"Процесс",how_title:"Как работает EcoSort",how_sub:"Три простых шага к чистому городу.",
+    step1_title:"Загрузите фото",step1_text:"Сфотографируйте любой предмет мусора. Обработка происходит локально — данные не покидают ваше устройство.",
+    step2_title:"AI анализирует",step2_text:"Модель классификации определяет тип: пластик, стекло, бумага, органика, металл или электронные отходы.",
+    step3_title:"Результат + баллы",step3_text:"Узнайте ближайший контейнер, инструкции по утилизации и получите эко-баллы для рейтинга.",
+    scan_label:"AI Демо",scan_title:"Попробуйте сканер",scan_sub:"Загрузите фото отхода и увидите классификацию в действии. В демо используются правила — в продакшне работает обученная модель.",
+    upload_main:"Нажмите для загрузки или перетащите",upload_sub:"JPG, PNG, WebP до 10МБ",upload_note:"Данные не сохраняются и не отправляются на сервер",scan_reset:"← Попробовать другое",
+    result_empty:"Загрузите фото, чтобы увидеть результат AI классификации.",
+    map_label:"Карта города",map_title:"Контейнеры рядом",map_sub:"Найдите точки сбора по районам. Наведите на зону — увидите статус заполнения.",
+    map_city:"Город",view_map:"Карта",view_stats:"Статистика",districts:"Районы",map_note:"Данные карты: OpenStreetMap. Расположение контейнеров смоделировано для демонстрации.",
+    analytics_label:"Аналитика",analytics_title:"Вклад всего города",analytics_sub:"Агрегированные данные сортировки по всем пользователям и точкам сбора.",
+    kpi1:"Всего отсортировано",kpi2:"Активных пользователей",kpi3:"CO₂ сохранено",kpi4:"Точность",
+    chart1_title:"Отходы по типу",chart2_title:"Активность (30 дней)",chart3_title:"Распределение",chart4_title:"Лидирующие районы",
+    game_label:"Геймификация",game_title:"Соревнуйтесь. Сохраняйте. Побеждайте.",game_sub:"Зарабатывайте эко-баллы за каждое сканирование, повышайте уровень и возглавляйте рейтинг.",
+    levels_title:"Ваш прогресс",levels_sub:"Сортируйте больше, чтобы открыть новые уровни",lb_title:"Таблица лидеров",lb_sub:"Топ эко-героев этого месяца",
+    about_label:"Миссия",about_title:"Зачем EcoSort",about_sub:"Большинство отходов в городах попадает не в тот контейнер — не из-за лени, а из-за отсутствия понятной информации.",
+    about1_title:"Создан для Алматы",about1_text:"Разработан с учётом местной инфраструктуры переработки. Мы картируем реальные точки сбора.",
+    about2_title:"Прозрачный AI",about2_text:"Никаких чёрных ящиков. Классификатор показывает уровень уверенности и объясняет своё решение.",
+    about3_title:"Реальный эффект",about3_text:"Каждый правильно отсортированный предмет снижает нагрузку на полигоны и выбросы CO₂.",
+    cta_title:"Готовы изменить ситуацию?",cta_sub:"Присоединяйтесь к 3800+ пользователей, которые сортируют умнее в Алматы.",cta_btn:"Начать сортировку →"
+  },
+  kz:{
+    nav_how:"Қалай жұмыс істейді",nav_scanner:"AI Сканер",nav_map:"Карта",nav_analytics:"Аналитика",nav_game:"Көшбасшылар",nav_about:"Жоба туралы",nav_try:"Байқап көру",
+    hero_badge:"Алматыда жұмыс істейді · Бета",hero_title1:"Ақылды Қалдық",hero_title2:"AI Арқылы",
+    hero_sub:"Секундтар ішінде қалдықтарды сұрыптаңыз. Фото жүктеңіз — жүйе түрін анықтайды, қайда тастауды айтады және эко-ұпайлар береді.",
+    hero_cta1:"AI Сканерді ашу →",hero_cta2:"Толығырақ",
+    stat1:"сканерленді",stat2:"эко-пайдаланушы",stat3:"кг CO₂ үнемделді",
+    how_label:"Процесс",how_title:"EcoSort қалай жұмыс істейді",how_sub:"Таза қалаға апаратын үш қарапайым қадам.",
+    step1_title:"Фото жүктеу",step1_text:"Кез келген қалдықтың фотосын түсіріңіз. Өңдеу жергілікті жерде жүреді — деректер құрылғыдан шықпайды.",
+    step2_title:"AI талдайды",step2_text:"Жіктеу моделі түрін анықтайды: пластик, шыны, қағаз, органика, металл немесе электронды қалдық.",
+    step3_title:"Нәтиже + ұпайлар",step3_text:"Ең жақын контейнерді, кәдеге жарату нұсқаулығын біліп, рейтинг үшін эко-ұпайлар алыңыз.",
+    scan_label:"AI Демо",scan_title:"Сканерді байқаңыз",scan_sub:"Кез келген қалдық фотосын жүктеп, жіктеуді іс жүзінде көріңіз.",
+    upload_main:"Жүктеу үшін басыңыз немесе сүйреп апарыңыз",upload_sub:"JPG, PNG, WebP 10МБ дейін",upload_note:"Деректер сақталмайды немесе серверге жіберілмейді",scan_reset:"← Басқасын байқау",
+    result_empty:"AI жіктеу нәтижесін көру үшін фото жүктеңіз.",
+    map_label:"Қала картасы",map_title:"Жанындағы контейнерлер",map_sub:"Аудандар бойынша жинау нүктелерін табыңыз.",
+    map_city:"Қала",view_map:"Карта",view_stats:"Статистика",districts:"Аудандар",map_note:"Карта деректері: OpenStreetMap. Контейнер орналасуы демонстрация үшін модельденген.",
+    analytics_label:"Аналитика",analytics_title:"Қаланың жалпы үлесі",analytics_sub:"Барлық пайдаланушылар мен жинау нүктелері бойынша жинақталған деректер.",
+    kpi1:"Барлығы сұрыпталды",kpi2:"Белсенді пайдаланушылар",kpi3:"CO₂ үнемделді",kpi4:"Дәлдік",
+    chart1_title:"Түр бойынша қалдықтар",chart2_title:"Белсенділік (30 күн)",chart3_title:"Үлестіру",chart4_title:"Үздік аудандар",
+    game_label:"Ойын",game_title:"Бәсеклесіңіз. Сақтаңыз. Жеңіңіз.",game_sub:"Әр сканерлеу үшін эко-ұпайлар жинаңыз, деңгейлерді өтіп, рейтингті басқарыңыз.",
+    levels_title:"Сіздің прогрессіңіз",levels_sub:"Жаңа деңгейлерді ашу үшін көбірек сұрыптаңыз",lb_title:"Көшбасшылар кестесі",lb_sub:"Осы айдың үздік эко-батырлары",
+    about_label:"Миссия",about_title:"EcoSort неге қажет",about_sub:"Орта Азия қалаларындағы қалдықтардың көпшілігі дұрыс емес контейнерге түседі.",
+    about1_title:"Алматы үшін жасалған",about1_text:"Жергілікті қайта өңдеу инфрақұрылымын ескере отырып жасалды.",
+    about2_title:"Мөлдір AI",about2_text:"Жасырын алгоритмдер жоқ. Жіктеуші сенімділік деңгейін көрсетеді.",
+    about3_title:"Нақты нәтиже",about3_text:"Дұрыс сұрыпталған әр зат полигон жүктемесін және CO₂ шығарындыларын азайтады.",
+    cta_title:"Өзгеріс енгізуге дайынсыз ба?",cta_sub:"Алматыда ақылды сұрыптайтын 3800+ пайдаланушыға қосылыңыз.",cta_btn:"Сұрыптауды бастау →"
+  }
+};
+let lang='en';
+function setLang(l){
+  lang=l;
+  document.querySelectorAll('.lang-btn').forEach(b=>{b.classList.toggle('active',b.textContent===l.toUpperCase())});
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.getAttribute('data-i18n');
+    if(i18n[l][k])el.textContent=i18n[l][k];
+  });
+}
+
+// ===== PARTICLES =====
+(function(){
+  const container=document.getElementById('particles');
+  for(let i=0;i<20;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    p.style.cssText=`left:${Math.random()*100}%;animation-duration:${6+Math.random()*10}s;animation-delay:${Math.random()*8}s;width:${2+Math.random()*4}px;height:${2+Math.random()*4}px;opacity:${0.2+Math.random()*0.5}`;
+    container.appendChild(p);
+  }
+})();
+
+// ===== COUNTER ANIMATION =====
+function animateCounter(el,target,suffix=''){
+  let current=0;const step=target/60;
+  const timer=setInterval(()=>{
+    current+=step;
+    if(current>=target){current=target;clearInterval(timer);}
+    el.textContent=Math.round(current).toLocaleString()+suffix;
+  },30);
+}
+setTimeout(()=>{
+  animateCounter(document.getElementById('counter-scans'),24180);
+  animateCounter(document.getElementById('counter-users'),3842);
+  animateCounter(document.getElementById('counter-co2'),1240);
+},800);
+
+// ===== FADE IN OBSERVER =====
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')});
+},{threshold:0.1});
+document.querySelectorAll('.fade-in').forEach(el=>observer.observe(el));
+
+// ===== AI SCANNER =====
+const WASTE_TYPES=[
+  {name:'Plastic',nameRu:'Пластик',nameKz:'Пластик',icon:'🧴',color:'#3498db',bin:'Yellow bin',binRu:'Жёлтый контейнер',binKz:'Сары контейнер',points:15,tip:'Remove caps and rinse before recycling.',tipRu:'Снимите крышки и ополосните перед переработкой.',tipKz:'Қақпақтарды алып тастап, кәдеге жарату алдында шайыңыз.'},
+  {name:'Glass',nameRu:'Стекло',nameKz:'Шыны',icon:'🍾',color:'#27ae60',bin:'Green bin',binRu:'Зелёный контейнер',binKz:'Жасыл контейнер',points:20,tip:'Separate by color if possible. Remove lids.',tipRu:'По возможности разделите по цвету. Снимите крышки.',tipKz:'Мүмкіндігінше түсі бойынша бөліңіз.'},
+  {name:'Paper',nameRu:'Бумага',nameKz:'Қағаз',icon:'📦',color:'#e67e22',bin:'Blue bin',binRu:'Синий контейнер',binKz:'Көк контейнер',points:10,tip:'Flatten boxes to save space. Keep paper dry.',tipRu:'Сложите коробки. Бумага должна быть сухой.',tipKz:'Қораптарды жайып, қағазды құрғақ ұстаңыз.'},
+  {name:'Organic',nameRu:'Органика',nameKz:'Органика',icon:'🍎',color:'#8e44ad',bin:'Brown bin',binRu:'Коричневый контейнер',binKz:'Қоңыр контейнер',points:8,tip:'Great for composting. No meat or dairy in home compost.',tipRu:'Идеально для компостирования.',tipKz:'Компосттауға өте жақсы.'},
+  {name:'Metal',nameRu:'Металл',nameKz:'Металл',icon:'🥫',color:'#95a5a6',bin:'Grey bin',binRu:'Серый контейнер',binKz:'Сұр контейнер',points:18,tip:'Rinse cans and crush them to save space.',tipRu:'Ополосните банки и сомните для экономии места.',tipKz:'Банкаларды шайып, орын үнемдеу үшін езіңіз.'},
+  {name:'E-Waste',nameRu:'Электроника',nameKz:'Электроника',icon:'💻',color:'#e74c3c',bin:'Special drop-off point',binRu:'Специальный пункт приёма',binKz:'Арнайы қабылдау нүктесі',points:30,tip:'Never put electronics in regular bins. Use certified e-waste recyclers.',tipRu:'Никогда не кладите электронику в обычные контейнеры.',tipKz:'Электрониканы кәдімгі контейнерлерге салмаңыз.'},
+];
+let totalPoints=0;
+
+function handleUpload(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    document.getElementById('upload-area').style.display='none';
+    const prev=document.getElementById('preview-area');
+    prev.classList.add('show');
+    document.getElementById('preview-img').src=ev.target.result;
+    document.getElementById('scan-line').style.display='block';
+    runScanAnimation();
+  };
+  reader.readAsDataURL(file);
+}
+
+function runScanAnimation(){
+  const bar=document.getElementById('scan-bar');
+  const status=document.getElementById('scan-status');
+  const msgs=['Reading image data...','Detecting edges...','Classifying material...','Cross-referencing database...','Finalizing result...'];
+  let pct=0;let msgIdx=0;
+  const timer=setInterval(()=>{
+    pct+=Math.random()*3+1;
+    if(pct>100)pct=100;
+    bar.style.width=pct+'%';
+    if(pct>msgIdx*20+20&&msgIdx<msgs.length){status.textContent=msgs[msgIdx++];}
+    if(pct>=100){clearInterval(timer);showResult();}
+  },60);
+}
+
+function showResult(){
+  const type=WASTE_TYPES[Math.floor(Math.random()*WASTE_TYPES.length)];
+  const conf=Math.round(82+Math.random()*15);
+  const nearest=Math.round(50+Math.random()*400);
+  document.getElementById('scan-line').style.display='none';
+  totalPoints+=type.points;
+  const binName=lang==='ru'?type.binRu:lang==='kz'?type.binKz:type.bin;
+  const typeName=lang==='ru'?type.nameRu:lang==='kz'?type.nameKz:type.name;
+  const tip=lang==='ru'?type.tipRu:lang==='kz'?type.tipKz:type.tip;
+  const rb=document.getElementById('result-box');
+  rb.innerHTML=`
+    <div class="result-type"><div class="result-icon">${type.icon}</div><div><div class="result-name">${typeName}</div><div class="result-conf">Confidence: ${conf}%</div></div></div>
+    <div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:16px"><div style="height:100%;width:${conf}%;background:${type.color};border-radius:3px;transition:width 0.6s ease"></div></div>
+    <div class="result-grid">
+      <div class="result-chip"><div class="result-chip-label">Bin</div><div class="result-chip-val">${binName}</div></div>
+      <div class="result-chip"><div class="result-chip-label">Nearest</div><div class="result-chip-val">${nearest}m away</div></div>
+      <div class="result-chip"><div class="result-chip-label">Recyclable</div><div class="result-chip-val" style="color:var(--green)">✓ Yes</div></div>
+      <div class="result-chip"><div class="result-chip-label">CO₂ impact</div><div class="result-chip-val">-${(Math.random()*0.4+0.1).toFixed(2)}kg</div></div>
+    </div>
+    <div class="points-animation"><div class="points-num">+${type.points}</div><div style="font-size:13px;color:var(--text2)">eco-points earned<br><span style="color:var(--text3)">Total: ${totalPoints} pts</span></div></div>
+    <p style="font-size:13px;color:var(--text2);margin-top:12px;line-height:1.6;padding:12px;background:var(--bg3);border-radius:8px">${tip}</p>
+    <p class="demo-label">Demo mode: result is simulated. Production version uses a trained vision model.</p>`;
+  rb.classList.add('show');
+  document.getElementById('scan-status').textContent='Analysis complete!';
+}
+
+function resetScanner(){
+  document.getElementById('upload-area').style.display='flex';
+  document.getElementById('preview-area').classList.remove('show');
+  document.getElementById('scan-bar').style.width='0%';
+  document.getElementById('file-input').value='';
+  const rb=document.getElementById('result-box');
+  rb.classList.remove('show');
+  rb.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;color:var(--text3);text-align:center;padding:40px"><div style="font-size:48px;opacity:0.3">🗂️</div><p>Upload a photo to see the AI classification result here.</p></div>`;
+}
+
+// Drag & drop
+const uploadArea=document.getElementById('upload-area');
+uploadArea.addEventListener('dragover',e=>{e.preventDefault();uploadArea.style.borderColor='var(--green)'});
+uploadArea.addEventListener('dragleave',()=>{uploadArea.style.borderColor='var(--border2)'});
+uploadArea.addEventListener('drop',e=>{e.preventDefault();uploadArea.style.borderColor='var(--border2)';const f=e.dataTransfer.files[0];if(f){document.getElementById('file-input').files=e.dataTransfer.files;handleUpload({target:{files:[f]}});}});
+
+// ===== MAP =====
+const CITIES={
+  almaty:{lat:43.238,lng:76.9,zoom:12,districts:[
+    {name:'Алмалы',color:'#e74c3c',lat:43.258,lng:76.935,fill:78},
+    {name:'Бостандык',color:'#f39c12',lat:43.255,lng:76.905,fill:62},
+    {name:'Медеу',color:'#27ae60',lat:43.225,lng:76.960,fill:34},
+    {name:'Ауэзов',color:'#e74c3c',lat:43.248,lng:76.882,fill:85},
+    {name:'Жетысу',color:'#f39c12',lat:43.265,lng:76.960,fill:57},
+    {name:'Турксиб',color:'#27ae60',lat:43.270,lng:76.968,fill:41},
+    {name:'Наурыз',color:'#f39c12',lat:43.232,lng:76.895,fill:69},
+    {name:'Алатау',color:'#27ae60',lat:43.262,lng:76.862,fill:38},
+  ],bins:[
+    [43.253,76.948],[43.247,76.922],[43.238,76.915],[43.230,76.930],[43.242,76.960],[43.258,76.910],[43.265,76.895],[43.273,76.968],[43.225,76.955],[43.218,76.962],[43.262,76.862],[43.248,76.878],[43.240,76.882],[43.252,76.875],[43.270,76.945],
+  ]},
+  astana:{lat:51.128,lng:71.430,zoom:12,districts:[
+    {name:'Есіл',color:'#27ae60',lat:51.130,lng:71.445,fill:35},{name:'Сарыарқа',color:'#f39c12',lat:51.178,lng:71.445,fill:62},{name:'Алматы ауданы',color:'#e74c3c',lat:51.155,lng:71.410,fill:81},{name:'Байқоңыр',color:'#27ae60',lat:51.148,lng:71.470,fill:42},
+  ],bins:[[51.130,71.445],[51.145,71.430],[51.160,71.455],[51.175,71.440],[51.135,71.460]]},
+  shymkent:{lat:42.315,lng:69.590,zoom:12,districts:[
+    {name:'Абай',color:'#f39c12',lat:42.325,lng:69.590,fill:55},{name:'Ордабасы',color:'#27ae60',lat:42.308,lng:69.600,fill:38},{name:'Аль-Фараби',color:'#e74c3c',lat:42.315,lng:69.575,fill:82},
+  ],bins:[[42.320,69.590],[42.310,69.595],[42.325,69.580]]},
+};
+
+let leafletMap=null,mapMarkers=[],currentCity='almaty';
+
+function initLeafletMap(){
+  const city=CITIES.almaty;
+  leafletMap=L.map('leaflet-map').setView([city.lat,city.lng],city.zoom);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:18}).addTo(leafletMap);
+  loadCityData('almaty');
+}
+
+function loadCityData(cityKey){
+  currentCity=cityKey;
+  const city=CITIES[cityKey];
+  mapMarkers.forEach(m=>leafletMap.removeLayer(m));mapMarkers=[];
+  leafletMap.setView([city.lat,city.lng],city.zoom);
+  city.bins.forEach(coords=>{
+    const fill=Math.round(30+Math.random()*65);
+    const color=fill>=80?'#e74c3c':fill>=40?'#f39c12':'#27ae60';
+    const icon=L.divIcon({html:`<div style="width:14px;height:14px;background:${color};border:2px solid white;border-radius:50%;box-shadow:0 0 6px ${color}44"></div>`,iconSize:[14,14],iconAnchor:[7,7],className:''});
+    const m=L.marker(coords,{icon}).addTo(leafletMap).bindPopup(`<div style="background:#111;color:#fff;padding:8px 12px;border-radius:8px;border:1px solid rgba(0,200,83,0.3);font-family:sans-serif;font-size:13px"><b style="color:${color}">${fill}% full</b><br><span style="color:#888">Last collected: ${Math.round(1+Math.random()*6)}h ago</span></div>`,{className:'dark-popup'});
+    mapMarkers.push(m);
+  });
+  renderDistrictList(cityKey);
+}
+
+function changeCity(val){loadCityData(val);}
+
+function renderDistrictList(cityKey){
+  const city=CITIES[cityKey];
+  const list=document.getElementById('district-list');
+  list.innerHTML=city.districts.map((d,i)=>`
+    <div class="district-item" onclick="panToDistrict(${d.lat},${d.lng})">
+      <div class="district-dot" style="background:${d.color}"></div>
+      <span class="district-name">${d.name}</span>
+      <span class="district-pct">${d.fill}%</span>
+    </div>`).join('');
+}
+
+function panToDistrict(lat,lng){
+  leafletMap.setView([lat,lng],14);
+}
+
+let mapView='map';
+function setMapView(v){
+  mapView=v;
+  document.getElementById('view-map-btn').classList.toggle('active',v==='map');
+  document.getElementById('view-stats-btn').classList.toggle('active',v==='stats');
+}
+
+// ===== CHARTS =====
+function renderBarChart(){
+  const data=[
+    {label:'Plastic',val:38,color:'#3498db'},{label:'Paper',val:24,color:'#e67e22'},
+    {label:'Glass',val:16,color:'#27ae60'},{label:'Metal',val:12,color:'#95a5a6'},
+    {label:'Organic',val:7,color:'#8e44ad'},{label:'E-Waste',val:3,color:'#e74c3c'},
+  ];
+  document.getElementById('bar-chart').innerHTML=data.map(d=>`
+    <div class="bar-row">
+      <span class="bar-label">${d.label}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${d.val}%;background:${d.color}" data-w="${d.val}%"></div></div>
+      <span class="bar-val">${d.val}%</span>
+    </div>`).join('');
+}
+
+function renderTimeline(){
+  const vals=Array.from({length:30},()=>Math.round(200+Math.random()*600));
+  const max=Math.max(...vals);
+  const months=['1','','','','5','','','','','10','','','','','15','','','','','20','','','','','25','','','','','30'];
+  document.getElementById('timeline-bars').innerHTML=vals.map(v=>`<div class="timeline-bar" style="height:${(v/max*100).toFixed(0)}%" title="${v} items"></div>`).join('');
+  document.getElementById('timeline-labels').innerHTML=months.map(m=>`<div class="timeline-label">${m}</div>`).join('');
+}
+
+function renderDonut(){
+  const slices=[
+    {label:'Plastic',pct:38,color:'#3498db'},{label:'Paper',pct:24,color:'#e67e22'},
+    {label:'Glass',pct:16,color:'#27ae60'},{label:'Other',pct:22,color:'#444'},
+  ];
+  const svg=document.getElementById('donut-svg');
+  const legend=document.getElementById('donut-legend');
+  let offset=0;
+  const cx=60,cy=60,r=48,innerR=30,circ=2*Math.PI*r;
+  let paths='';
+  slices.forEach(s=>{
+    const angle=s.pct/100*circ;
+    const startAngle=offset/circ*2*Math.PI-Math.PI/2;
+    const endAngle=(offset+angle)/circ*2*Math.PI-Math.PI/2;
+    const x1=cx+r*Math.cos(startAngle),y1=cy+r*Math.sin(startAngle);
+    const x2=cx+r*Math.cos(endAngle),y2=cy+r*Math.sin(endAngle);
+    const xi1=cx+innerR*Math.cos(startAngle),yi1=cy+innerR*Math.sin(startAngle);
+    const xi2=cx+innerR*Math.cos(endAngle),yi2=cy+innerR*Math.sin(endAngle);
+    const large=s.pct>50?1:0;
+    paths+=`<path d="M${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 ${large} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} L${xi2.toFixed(1)} ${yi2.toFixed(1)} A${innerR} ${innerR} 0 ${large} 0 ${xi1.toFixed(1)} ${yi1.toFixed(1)} Z" fill="${s.color}" opacity="0.85"/>`;
+    offset+=angle;
+  });
+  svg.innerHTML=paths;
+  legend.innerHTML=slices.map(s=>`<div class="legend-item"><div class="legend-dot" style="background:${s.color}"></div>${s.label}: ${s.pct}%</div>`).join('');
+}
+
+function renderDistrictChart(){
+  const data=[
+    {label:'Медеу',val:91,color:'#27ae60'},{label:'Бостандык',val:84,color:'#3498db'},
+    {label:'Алматы р.',val:76,color:'#8e44ad'},{label:'Ауэзов',val:68,color:'#e67e22'},
+    {label:'Турксиб',val:55,color:'#e74c3c'},
+  ];
+  document.getElementById('district-chart').innerHTML=data.map(d=>`
+    <div class="bar-row">
+      <span class="bar-label" style="width:80px">${d.label}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${d.val}%;background:${d.color}"></div></div>
+      <span class="bar-val">${d.val}%</span>
+    </div>`).join('');
+}
+
+// ===== GAMIFICATION =====
+const LEVELS=[
+  {name:'Beginner',nameRu:'Начинающий',nameKz:'Бастаушы',icon:'🌱',min:0,max:100,color:'#4a9e4a'},
+  {name:'Eco Aware',nameRu:'Эко-осознанный',nameKz:'Эко-саналы',icon:'♻️',min:100,max:300,color:'#3498db'},
+  {name:'Recycler',nameRu:'Переработчик',nameKz:'Қайта өңдеуші',icon:'🔄',min:300,max:700,color:'#8e44ad'},
+  {name:'Green Hero',nameRu:'Зелёный герой',nameKz:'Жасыл батыр',icon:'🌍',min:700,max:1500,color:'#f39c12'},
+  {name:'Eco Hero',nameRu:'Эко-герой',nameKz:'Эко-батыр',icon:'⭐',min:1500,max:9999,color:'#e74c3c'},
+];
+const currentPts=340;
+
+function renderLevels(){
+  document.getElementById('levels-list').innerHTML=LEVELS.map((l,i)=>{
+    const active=currentPts>=l.min&&currentPts<l.max;
+    const done=currentPts>=l.max;
+    const pct=active?Math.min(100,((currentPts-l.min)/(l.max-l.min)*100)):done?100:0;
+    return`<div class="level-item${active?' current':''}">
+      <div class="level-badge" style="background:${l.color}22;border:1px solid ${l.color}44">${l.icon}</div>
+      <div class="level-info">
+        <div class="level-name" style="color:${done||active?'var(--text)':'var(--text3)'}">${l.name}</div>
+        <div class="level-pts">${l.min}–${l.max==='9999'?'∞':l.max} pts ${active?'← You are here':''}</div>
+        ${active?`<div class="level-xp"><div class="level-xp-fill" style="width:${pct}%;background:${l.color}"></div></div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+const LEADERS=[
+  {name:'Aigerim K.',avatar:'🌸',pts:2840,rank:1},{name:'Daniyar S.',avatar:'🦁',pts:2415,rank:2},
+  {name:'Maria V.',avatar:'🌺',pts:1980,rank:3},{name:'Bekzhan T.',avatar:'🏔️',pts:1742,rank:4},
+  {name:'Alina R.',avatar:'⭐',pts:1530,rank:5},{name:'You',avatar:'🌱',pts:340,rank:47},
+];
+function renderLeaderboard(){
+  document.getElementById('leaderboard').innerHTML=LEADERS.map(l=>{
+    const rankClass=l.rank===1?'gold':l.rank===2?'silver':l.rank===3?'bronze':'';
+    return`<div class="lb-row">
+      <div class="lb-rank ${rankClass}">${l.rank}</div>
+      <div class="lb-avatar">${l.avatar}</div>
+      <div class="lb-name">${l.name}</div>
+      <div class="lb-pts">${l.pts.toLocaleString()} pts</div>
+    </div>`;
+  }).join('');
+}
+
+// ===== INIT =====
+window.addEventListener('load',()=>{
+  initLeafletMap();
+  renderBarChart();
+  renderTimeline();
+  renderDonut();
+  renderDistrictChart();
+  renderLevels();
+  renderLeaderboard();
+  // animate bars on scroll
+  const barObserver=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        e.target.querySelectorAll('.bar-fill').forEach(b=>{
+          const w=b.style.width||b.getAttribute('data-w');
+          b.style.width='0%';
+          setTimeout(()=>{b.style.width=w;},100);
+        });
+      }
+    });
+  },{threshold:0.3});
+  document.querySelectorAll('.chart-card').forEach(c=>barObserver.observe(c));
+});
+</script>
+</body>
+</html>
